@@ -52,7 +52,9 @@ func (r *Chats) GetByID(id int) (*models.Chat, error) {
 }
 
 func (r *Chats) Delete(id int) error {
-	if err := r.DB.Delete(&models.Chat{}, id).Error; err != nil {
+
+	err := r.DB.Delete(&models.Chat{}, id).Error
+	if err != nil {
 		return err
 	}
 
@@ -76,7 +78,7 @@ WHERE ch."type" = ? AND m.id IN ?`, types.ChatPersonal, userIds).Scan(m).Error
 	return m, nil
 }
 
-func (r *Chats) CreateMembers(id int, memberIds []int) error {
+func (r *Chats) CreateMembers(id int, memberIds ...int) error {
 
 	var members []ChatMember
 	for _, memberId := range memberIds {
@@ -91,9 +93,14 @@ func (r *Chats) CreateMembers(id int, memberIds []int) error {
 	return nil
 }
 
-func (r *Chats) FindMemberIds(id int) ([]int, error) {
+func (r *Chats) FindMemberIds(id int, chatType ...types.Chat) ([]int, error) {
 	var list []ChatMember
-	err := r.DB.Where("chat_id = ?", id).Find(&list).Error
+	tx := r.DB.Where("chat_id = ?", id)
+	if len(chatType) == 1 {
+		tx.Where("type = ?", chatType[0])
+	}
+
+	err := tx.Find(&list).Error
 	if err != nil {
 		return nil, err
 	}
@@ -104,4 +111,14 @@ func (r *Chats) FindMemberIds(id int) ([]int, error) {
 	}
 
 	return ids, nil
+}
+
+func (r *Chats) DeleteMember(id int, memberId int) error {
+
+	err := r.DB.Delete(&ChatMember{ChatId: id, UserId: memberId}).Error
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

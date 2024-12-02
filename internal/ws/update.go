@@ -49,7 +49,7 @@ func (h *Hub) updateCreateGroup(update *models.Update) error {
 		return err
 	}
 
-	err = h.serv.Chats.CreateMembers(g.Id, []int{g.OwnerId})
+	err = h.serv.Chats.CreateMembers(g.Id, g.OwnerId)
 	if err != nil {
 		return err
 	}
@@ -63,13 +63,48 @@ func (h *Hub) updateCreateGroup(update *models.Update) error {
 	return nil
 }
 
-func (h *Hub) updateJoinGroup(update *models.Update) error { return nil }
+func (h *Hub) updateJoinGroup(update *models.Update) error {
+	chatId := update.RelatedId
+
+	err := h.serv.Chats.JoinGroup(chatId, update.FromUserId)
+
+	msg := fmt.Sprintf(`@%d joined the group`, update.FromUserId)
+	err = h.sendEventMsg(msg, chatId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
 
 func (h *Hub) updateLiveGroup(update *models.Update) error {
+	chatId := update.RelatedId
+
+	err := h.serv.Chats.LiveGroup(chatId, update.FromUserId)
+
+	msg := fmt.Sprintf(`@%d left the group`, update.FromUserId)
+	err = h.sendEventMsg(msg, chatId)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func (h *Hub) updateSendMessage(update *models.Update) error {
+	msg := update.Message
+
+	msg.SenderId = &update.FromUserId
+	msg, err := h.serv.Messages.Create(msg)
+	if err != nil {
+		return err
+	}
+
+	err = h.sendMsg(msg)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

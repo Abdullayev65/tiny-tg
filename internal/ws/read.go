@@ -31,7 +31,8 @@ func (h *Hub) ReadMessages(client *Client) error {
 		update.FromUserId = client.userId
 		err = h.update(update)
 		if err != nil {
-			return err
+			fmt.Println(err)
+			//return err
 		}
 
 	}

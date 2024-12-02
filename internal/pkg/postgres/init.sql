@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS messages (
     chat_id INT REFERENCES chats(id),
     text TEXT,
     reply_to_id INT REFERENCES messages(id),
-    forward_from_user_id INT REFERENCES users(id),
+    forward_from_id INT REFERENCES users(id),
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
     deleted_at TIMESTAMP

@@ -6,13 +6,15 @@ import (
 )
 
 type Service struct {
-	Auth  *Auth
-	Chats *Chats
+	Auth     *Auth
+	Chats    *Chats
+	Messages *Messages
 }
 
 func New(repo *repository.Repo, jwtManager *jwt_manager.JwtManager) *Service {
 	return &Service{
 		&Auth{repo, jwtManager},
 		&Chats{repo},
+		&Messages{repo},
 	}
 }

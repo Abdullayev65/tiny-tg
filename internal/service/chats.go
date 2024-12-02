@@ -1,6 +1,7 @@
 package service
 
 import (
+	"slices"
 	"time"
 	"tiny-tg/internal/models"
 	"tiny-tg/internal/models/types"
@@ -54,7 +55,7 @@ func (s *Chats) MustGetPersonalChat(userIds [2]int) (*models.Chat, error) {
 			return nil, err
 		}
 
-		err = s.Repo.Chats.CreateMembers(m.Id, userIds[:])
+		err = s.Repo.Chats.CreateMembers(m.Id, userIds[0], userIds[1])
 		if err != nil {
 			return nil, err
 		}
@@ -84,8 +85,57 @@ func (s *Chats) Create(m *models.Chat) (*models.Chat, error) {
 	return m, nil
 }
 
-func (s *Chats) CreateMembers(gropId int, memberIds []int) error {
-	return s.Repo.Chats.CreateMembers(gropId, memberIds)
+func (s *Chats) CreateMembers(gropId int, memberIds ...int) error {
+	return s.Repo.Chats.CreateMembers(gropId, memberIds...)
+}
+
+func (s *Chats) JoinGroup(gropId, userId int) error {
+	chat, err := s.GetGroupChat(gropId)
+	if err != nil {
+		return err
+	}
+
+	if slices.Contains(chat.MemberIds, userId) {
+		return nil
+	}
+
+	if chat.Type == types.ChatPersonal {
+		return app_errors.AccessDenied
+	}
+
+	err = s.Repo.Chats.CreateMembers(gropId, userId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Chats) LiveGroup(gropId, userId int) error {
+	chat, err := s.GetGroupChat(gropId)
+	if err != nil {
+		return err
+	}
+
+	if !slices.Contains(chat.MemberIds, userId) {
+		// maybe we will return err...
+		return nil
+	}
+
+	if chat.Type == types.ChatPersonal {
+		return app_errors.BadRequest
+	}
+
+	err = s.Repo.Chats.DeleteMember(gropId, userId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Chats) FindMemberIds(chatId int) ([]int, error) {
+	return s.Repo.Chats.FindMemberIds(chatId)
 }
 
 //

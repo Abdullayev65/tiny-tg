@@ -2,16 +2,22 @@ package ws
 
 import (
 	"github.com/gorilla/websocket"
+	"net/http"
 	"sync"
 	"tiny-tg/internal/models"
 	"tiny-tg/internal/service"
 )
 
 func NewHub(serv *service.Service) *Hub {
+	upgrader := &websocket.Upgrader{
+		CheckOrigin: func(r *http.Request) bool { return true },
+	}
+
 	return &Hub{
-		serv: serv,
-		//broadcast:  make(chan []byte),
-		//clients:    make(map[*Client]bool),
+		serv:      serv,
+		clients:   make(map[int]*Client),
+		upgrader:  upgrader,
+		broadcast: make(chan []*models.Update),
 	}
 }
 
