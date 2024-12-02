@@ -33,7 +33,7 @@ func main() {
 	jwtManager := jwt_manager.New(config.JWT_SIGNING_KEY, config.JWT_EXPIRY_DURATION)
 	repos := repository.New(db)
 	services := service.New(repos, jwtManager)
-	wsHub := ws.NewHub()
+	wsHub := ws.NewHub(services)
 	handlers := handler.New(services, jwtManager, wsHub)
 	wsHub.Start()
 

@@ -4,23 +4,23 @@ import (
 	"github.com/gorilla/websocket"
 	"sync"
 	"tiny-tg/internal/models"
+	"tiny-tg/internal/service"
 )
 
-func NewHub() *Hub {
+func NewHub(serv *service.Service) *Hub {
 	return &Hub{
+		serv: serv,
 		//broadcast:  make(chan []byte),
 		//clients:    make(map[*Client]bool),
 	}
 }
 
 type Hub struct {
-	clients map[int]*Client
-
-	upgrader *websocket.Upgrader
-
+	serv      *service.Service
+	clients   map[int]*Client
+	upgrader  *websocket.Upgrader
 	broadcast chan []*models.Update
-
-	mu sync.Mutex
+	mu        sync.Mutex
 }
 
 type Client struct {

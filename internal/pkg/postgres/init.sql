@@ -51,6 +51,7 @@ CREATE TABLE IF NOT EXISTS messages (
 CREATE TABLE IF NOT EXISTS attachments (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
+    file_path VARCHAR(255) NOT NULL,
     mime_type VARCHAR(31) NOT NULL,
     size INT NOT NULL,
     uploaded_by INT REFERENCES users(id),

@@ -15,5 +15,6 @@ const (
 )
 
 const (
-	ActionMessage Action = "update_message"
+	ActionGetMessage     Action = "get_message"
+	ActionGetMessageSeen Action = "get_message_seen"
 )

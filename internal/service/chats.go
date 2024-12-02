@@ -71,38 +71,23 @@ func (s *Chats) MustGetPersonalChat(userIds [2]int) (*models.Chat, error) {
 	return model, nil
 }
 
-//
-//func (s *Bids) Create(bid *dtos.BidCreate) (*dtos.BidList, error) {
-//	err := s.validateBid(bid)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	data := models.Bid{
-//		TenderId:     bid.TenderID,
-//		ContractorId: bid.ContractorID,
-//		Price:        bid.Price,
-//		DeliveryTime: bid.DeliveryTime,
-//		Comments:     bid.Comments,
-//		Status:       bid.Status,
-//	}
-//	res, err := s.Repo.Bids.Create(&data)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	return &dtos.BidList{
-//		BidsBase: dtos.BidsBase{
-//			TenderID:     res.TenderId,
-//			ContractorID: res.ContractorId,
-//			Price:        res.Price,
-//			DeliveryTime: res.DeliveryTime,
-//			Comments:     res.Comments,
-//			Status:       res.Status,
-//		},
-//		ID: res.ID,
-//	}, nil
-//}
+func (s *Chats) Create(m *models.Chat) (*models.Chat, error) {
+	if m.Name == "" {
+		m.Name = "Group " + time.Now().Format("Jan 02 15:04")
+	}
+
+	m, err := s.Repo.Chats.Create(m)
+	if err != nil {
+		return nil, err
+	}
+
+	return m, nil
+}
+
+func (s *Chats) CreateMembers(gropId int, memberIds []int) error {
+	return s.Repo.Chats.CreateMembers(gropId, memberIds)
+}
+
 //
 //func (s *Bids) Delete(id uint, contractorId uint) error {
 //	bid, err := s.Repo.Bids.GetByID(id)
