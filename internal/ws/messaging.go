@@ -40,3 +40,7 @@ func (h *Hub) sendMsg(msg *models.Message) error {
 
 	return nil
 }
+
+func (h *Hub) sendMsgSeen(ms *models.MessageSeen) error {
+	panic("implement me")
+}

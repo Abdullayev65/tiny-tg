@@ -89,49 +89,49 @@ func (s *Chats) CreateMembers(gropId int, memberIds ...int) error {
 	return s.Repo.Chats.CreateMembers(gropId, memberIds...)
 }
 
-func (s *Chats) JoinGroup(gropId, userId int) error {
+func (s *Chats) JoinGroup(gropId, userId int) (bool, error) {
 	chat, err := s.GetGroupChat(gropId)
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	if slices.Contains(chat.MemberIds, userId) {
-		return nil
+		return false, nil
 	}
 
 	if chat.Type == types.ChatPersonal {
-		return app_errors.AccessDenied
+		return false, app_errors.AccessDenied
 	}
 
 	err = s.Repo.Chats.CreateMembers(gropId, userId)
 	if err != nil {
-		return err
+		return false, err
 	}
 
-	return nil
+	return true, nil
 }
 
-func (s *Chats) LiveGroup(gropId, userId int) error {
+func (s *Chats) LiveGroup(gropId, userId int) (bool, error) {
 	chat, err := s.GetGroupChat(gropId)
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	if !slices.Contains(chat.MemberIds, userId) {
 		// maybe we will return err...
-		return nil
+		return false, nil
 	}
 
 	if chat.Type == types.ChatPersonal {
-		return app_errors.BadRequest
+		return false, app_errors.BadRequest
 	}
 
 	err = s.Repo.Chats.DeleteMember(gropId, userId)
 	if err != nil {
-		return err
+		return false, err
 	}
 
-	return nil
+	return true, nil
 }
 
 func (s *Chats) FindMemberIds(chatId int) ([]int, error) {

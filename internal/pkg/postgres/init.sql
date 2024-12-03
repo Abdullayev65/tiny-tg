@@ -68,7 +68,6 @@ CREATE TABLE IF NOT EXISTS message_attachments (
 
 -- Message Seen Table (Tracking message read status)
 CREATE TABLE IF NOT EXISTS message_seen (
-    chat_id INT REFERENCES chats(id),
     message_id INT REFERENCES messages(id),
     user_id INT REFERENCES users(id),
     created_at TIMESTAMP DEFAULT NOW(),

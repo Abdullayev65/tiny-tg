@@ -66,13 +66,17 @@ func (h *Hub) updateCreateGroup(update *models.Update) error {
 func (h *Hub) updateJoinGroup(update *models.Update) error {
 	chatId := update.RelatedId
 
-	err := h.serv.Chats.JoinGroup(chatId, update.FromUserId)
-
-	msg := fmt.Sprintf(`@%d joined the group`, update.FromUserId)
-	err = h.sendEventMsg(msg, chatId)
+	ok, err := h.serv.Chats.JoinGroup(chatId, update.FromUserId)
 	if err != nil {
 		return err
 	}
+
+	if !ok {
+		return nil
+	}
+
+	msg := fmt.Sprintf(`@%d joined the group`, update.FromUserId)
+	err = h.sendEventMsg(msg, chatId)
 
 	return nil
 }
@@ -80,13 +84,17 @@ func (h *Hub) updateJoinGroup(update *models.Update) error {
 func (h *Hub) updateLiveGroup(update *models.Update) error {
 	chatId := update.RelatedId
 
-	err := h.serv.Chats.LiveGroup(chatId, update.FromUserId)
-
-	msg := fmt.Sprintf(`@%d left the group`, update.FromUserId)
-	err = h.sendEventMsg(msg, chatId)
+	ok, err := h.serv.Chats.LiveGroup(chatId, update.FromUserId)
 	if err != nil {
 		return err
 	}
+
+	if !ok {
+		return nil
+	}
+
+	msg := fmt.Sprintf(`@%d left the group`, update.FromUserId)
+	err = h.sendEventMsg(msg, chatId)
 
 	return nil
 }
@@ -109,13 +117,50 @@ func (h *Hub) updateSendMessage(update *models.Update) error {
 }
 
 func (h *Hub) updateEditMessage(update *models.Update) error {
+	msg := update.Message
+
+	msg.SenderId = &update.FromUserId
+	msg, err := h.serv.Messages.Update(msg)
+	if err != nil {
+		return err
+	}
+
+	err = h.sendMsg(msg)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func (h *Hub) updateDeleteMessage(update *models.Update) error {
+
+	msgId := update.RelatedId
+
+	msg, err := h.serv.Messages.SoftDelete(msgId, update.FromUserId)
+	if err != nil {
+		return err
+	}
+
+	err = h.sendMsg(msg)
+
 	return nil
 }
 
 func (h *Hub) updateMessageSeen(update *models.Update) error {
+	ms := update.MessageSeen
+
+	ms.UserId = update.FromUserId
+
+	ms, err := h.serv.Messages.CreateMsgSeen(ms)
+	if err != nil {
+		return err
+	}
+
+	err = h.sendMsgSeen(ms)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

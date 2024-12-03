@@ -50,6 +50,15 @@ func (r *Messages) GetByID(id int) (*models.Message, error) {
 	return &m, nil
 }
 
+func (r *Messages) Update(m *models.Message) error {
+	err := r.DB.Updates(m).Error
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (r *Messages) Delete(id int) error {
 
 	err := r.DB.Delete(&models.Message{}, id).Error
@@ -58,4 +67,13 @@ func (r *Messages) Delete(id int) error {
 	}
 
 	return nil
+}
+
+func (r *Messages) CreateMsgSeen(m *models.MessageSeen) (*models.MessageSeen, error) {
+	err := r.DB.Create(m).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return m, nil
 }

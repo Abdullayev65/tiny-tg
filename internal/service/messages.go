@@ -4,6 +4,7 @@ import (
 	"slices"
 	"time"
 	"tiny-tg/internal/models"
+	"tiny-tg/internal/models/types"
 	"tiny-tg/internal/pkg/app_errors"
 	"tiny-tg/internal/repository"
 )
@@ -37,6 +38,83 @@ func (s *Messages) Create(m *models.Message) (*models.Message, error) {
 	}
 
 	m, err = s.Repo.Messages.GetByID(m.Id)
+	if err != nil {
+		return nil, err
+	}
+
+	return m, nil
+}
+
+func (s *Messages) Update(data *models.Message) (*models.Message, error) {
+	m, err := s.Repo.Messages.GetByID(data.Id)
+	if err != nil {
+		return nil, err
+	}
+
+	if m.DeletedAt != nil {
+		return nil, app_errors.AccessDenied
+	}
+
+	if !equal(data.SenderId, m.SenderId) || m.ForwardFromId != nil {
+		return nil, app_errors.AccessDenied
+	}
+
+	m.Text = data.Text
+	m.Attachments = data.Attachments
+	m.UpdatedAt = time.Now()
+
+	err = s.Repo.Messages.Update(m)
+	if err != nil {
+		return nil, err
+	}
+
+	return m, nil
+}
+
+func (s *Messages) SoftDelete(id, userId int) (*models.Message, error) {
+	m, err := s.Repo.Messages.GetByID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	if !equal(m.SenderId, &userId) || m.DeletedAt != nil {
+		return nil, app_errors.AccessDenied
+	}
+
+	now := time.Now()
+	m.DeletedAt = &now
+
+	err = s.Repo.Messages.Update(m)
+	if err != nil {
+		return nil, err
+	}
+
+	return m, nil
+}
+
+func (s *Messages) CreateMsgSeen(m *models.MessageSeen) (*models.MessageSeen, error) {
+	msg, err := s.Repo.Messages.GetByID(m.MessageId)
+	if err != nil {
+		return nil, err
+	}
+
+	chat, err := s.Repo.Chats.GetByID(msg.ChatId)
+	if err != nil {
+		return nil, err
+	}
+
+	if chat.Type == types.ChatPersonal {
+		ids, err := s.Repo.Chats.FindMemberIds(msg.ChatId)
+		if err != nil {
+			return nil, err
+		}
+
+		if !slices.Contains(ids, m.UserId) {
+			return nil, app_errors.AccessDenied
+		}
+	}
+
+	m, err = s.Repo.Messages.CreateMsgSeen(m)
 	if err != nil {
 		return nil, err
 	}
