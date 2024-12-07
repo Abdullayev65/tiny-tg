@@ -1,27 +1,30 @@
 package ws
 
-import "github.com/gorilla/websocket"
-
 func (h *Hub) register(client *Client) {
 	h.mu.Lock()
 
+	prev, ok := h.clients[client.userId]
 	h.clients[client.userId] = client
 
 	h.mu.Unlock()
+
+	if ok {
+		prev.GoClose()
+	}
+
 }
 
-func (h *Hub) unregister(userId int) {
-	client, ok := h.clients[userId]
-	if !ok {
+func (h *Hub) unregister(c *Client) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	client, ok := h.clients[c.userId]
+	if !ok || client != c {
 		return
 	}
 
-	h.mu.Lock()
-	delete(h.clients, userId)
-	h.mu.Unlock()
+	delete(h.clients, c.userId)
 
-	close(client.send)
-	_ = client.conn.WriteMessage(websocket.CloseMessage, []byte{})
-	_ = client.conn.Close()
+	client.GoClose()
 
 }

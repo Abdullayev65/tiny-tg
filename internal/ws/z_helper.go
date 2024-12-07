@@ -1,6 +1,7 @@
 package ws
 
 import (
+	"errors"
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
@@ -42,4 +43,24 @@ func uploadFile(conn *websocket.Conn, size int, mimeType string) (string, error)
 	file.Close()
 
 	return filePath, nil
+}
+
+func (c *Client) Close() error {
+
+	close(c.send)
+	err0 := c.conn.WriteMessage(websocket.CloseMessage, nil)
+	err1 := c.conn.Close()
+
+	return errors.Join(err0, err1)
+}
+
+func (c *Client) GoClose() {
+
+	go func() {
+		err := c.Close()
+
+		fmt.Println(err)
+
+	}()
+
 }

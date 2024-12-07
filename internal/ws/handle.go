@@ -22,7 +22,7 @@ func (h *Hub) Handle(userId int, w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.register(client)
-	defer h.unregister(client.userId)
+	defer h.unregister(client)
 
 	go h.WriteMessages(client)
 

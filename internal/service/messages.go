@@ -121,3 +121,7 @@ func (s *Messages) CreateMsgSeen(m *models.MessageSeen) (*models.MessageSeen, er
 
 	return m, nil
 }
+
+func (s *Messages) GetByID(id int) (*models.Message, error) {
+	return s.Repo.Messages.GetByID(id)
+}

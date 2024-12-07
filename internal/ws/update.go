@@ -55,7 +55,7 @@ func (h *Hub) updateCreateGroup(update *models.Update) error {
 	}
 
 	msg := fmt.Sprintf(`@%d created a group "%s"`, g.OwnerId, g.Name)
-	err = h.sendEventMsg(msg, g.Id)
+	err = h.createAndSendEventMsg(msg, g.Id)
 	if err != nil {
 		return err
 	}
@@ -76,7 +76,7 @@ func (h *Hub) updateJoinGroup(update *models.Update) error {
 	}
 
 	msg := fmt.Sprintf(`@%d joined the group`, update.FromUserId)
-	err = h.sendEventMsg(msg, chatId)
+	err = h.createAndSendEventMsg(msg, chatId)
 
 	return nil
 }
@@ -94,7 +94,7 @@ func (h *Hub) updateLiveGroup(update *models.Update) error {
 	}
 
 	msg := fmt.Sprintf(`@%d left the group`, update.FromUserId)
-	err = h.sendEventMsg(msg, chatId)
+	err = h.createAndSendEventMsg(msg, chatId)
 
 	return nil
 }
@@ -148,9 +148,12 @@ func (h *Hub) updateDeleteMessage(update *models.Update) error {
 }
 
 func (h *Hub) updateMessageSeen(update *models.Update) error {
-	ms := update.MessageSeen
+	msgId := update.RelatedId
 
-	ms.UserId = update.FromUserId
+	ms := &models.MessageSeen{
+		UserId:    update.FromUserId,
+		MessageId: msgId,
+	}
 
 	ms, err := h.serv.Messages.CreateMsgSeen(ms)
 	if err != nil {

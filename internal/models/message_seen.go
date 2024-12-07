@@ -7,3 +7,7 @@ type MessageSeen struct {
 	UserId    int       `json:"user_id"`
 	CreatedAt time.Time `json:"created_at"`
 }
+
+func (_ MessageSeen) TableName() string {
+	return "message_seen"
+}
