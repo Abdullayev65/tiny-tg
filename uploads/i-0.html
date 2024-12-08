@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tiny TG</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .auth-container {
+            padding: 20px;
+            background-color: #f0f0f0;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .auth-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .auth-form input {
+            flex-grow: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .main-container {
+            display: flex;
+            flex-grow: 1;
+        }
+
+        .sidebar {
+            width: 300px;
+            background-color: #f0f0f0;
+            border-right: 1px solid #ddd;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .search-container {
+            padding: 10px;
+        }
+
+        #search {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+        }
+
+        .chat-list {
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+
+        .chat-item {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            cursor: pointer;
+        }
+
+        .chat-item:hover {
+            background-color: #e0e0e0;
+        }
+
+        .main-chat {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .messages {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .message {
+            margin-bottom: 10px;
+            padding: 8px;
+            border-radius: 8px;
+            max-width: 70%;
+            position: relative;
+        }
+
+        .message.sent {
+            background-color: #dcf8c6;
+            align-self: flex-end;
+        }
+
+        .message.received {
+            background-color: #fff;
+            align-self: flex-start;
+        }
+
+        .message-actions {
+            display: none;
+            position: absolute;
+            right: 5px;
+            top: 5px;
+        }
+
+        .message:hover .message-actions {
+            display: block;
+        }
+
+        .message-input {
+            display: flex;
+            padding: 10px;
+            border-top: 1px solid #ddd;
+        }
+
+        #message-text {
+            flex-grow: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            margin-right: 10px;
+        }
+
+        button {
+            padding: 8px 16px;
+            background-color: #0088cc;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #006699;
+        }
+
+        .action-button {
+            padding: 2px 5px;
+            font-size: 12px;
+            margin-left: 5px;
+        }
+    </style>
+</head>
+<body>
+<div class="auth-container">
+    <form id="register-form" class="auth-form">
+        <input type="text" id="username" placeholder="Username" required>
+        <input type="password" id="password" placeholder="Password" required>
+        <input type="text" id="name" placeholder="Name" required>
+        <input type="text" id="bio" placeholder="Bio">
+        <input type="text" id="avatar-path" placeholder="Avatar URL">
+        <button type="submit">Register</button>
+    </form>
+    <div id="auth-status"></div>
+</div>
+<div class="main-container">
+    <div class="sidebar">
+        <div class="search-container">
+            <input type="text" id="search" placeholder="Search" aria-label="Search chats">
+        </div>
+        <div class="chat-list" id="chatList">
+            <!-- Chat items will be dynamically added here -->
+        </div>
+    </div>
+    <div class="main-chat">
+        <div class="chat-header">
+            <h2 id="chatName">Select a chat</h2>
+        </div>
+        <div class="messages" id="messages">
+            <!-- Messages will be dynamically added here -->
+        </div>
+        <div class="message-input">
+            <input type="text" id="message-text" placeholder="Type a message" aria-label="Type a message">
+            <button id="send-button">Send</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const registerForm = document.getElementById('register-form');
+    const authStatus = document.getElementById('auth-status');
+    const chatList = document.getElementById('chatList');
+    const chatName = document.getElementById('chatName');
+    const messages = document.getElementById('messages');
+    const messageText = document.getElementById('message-text');
+    const sendButton = document.getElementById('send-button');
+    const search = document.getElementById('search');
+
+    let currentChatId = null;
+    let ws = null;
+    let token = localStorage.getItem('token');
+
+    // Register user
+    registerForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        const name = document.getElementById('name').value;
+        const bio = document.getElementById('bio').value;
+        const avatarPath = document.getElementById('avatar-path').value;
+
+        try {
+            const response = await fetch('http://localhost/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({username, password, name, bio, avatar_path: avatarPath}),
+            });
+
+            const data = await response.json();
+            if (data.token) {
+                token = data.token;
+                localStorage.setItem('token', token);
+                authStatus.textContent = 'Registration successful!';
+                connectWebSocket();
+                searchChats('');
+            } else {
+                authStatus.textContent = 'Registration failed. Please try again.';
+            }
+        } catch (error) {
+            console.error('Error during registration:', error);
+            authStatus.textContent = 'Registration failed. Please try again.';
+        }
+    });
+
+    // Connect to WebSocket
+    function connectWebSocket() {
+        ws = new WebSocket(`ws://localhost:80/api/ws?token=${token}`);
+
+        ws.onopen = () => {
+            console.log('WebSocket connected');
+        };
+
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            for (let update of data) {
+                handleWebSocketMessage(update);
+            }
+        };
+
+        ws.onclose = () => {
+            console.log('WebSocket disconnected. Reconnecting...');
+            setTimeout(connectWebSocket, 3000);
+        };
+    }
+
+    // Handle WebSocket messages
+    function handleWebSocketMessage(data) {
+        if (data.action === 'get_message') {
+            displayMessage(data.message);
+        } else if (data.action === 'get_message_seen') {
+            // Handle message seen status
+            console.log('Message seen:', data.message_seen);
+        }
+    }
+
+    // Search chats
+    async function searchChats(query) {
+        try {
+            const response = await fetch(`http://localhost/api/chat/search?limit=20&offset=0&query=${encodeURIComponent(query)}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            const data = await response.json();
+            populateChats(data.users.concat(data.groups));
+        } catch (error) {
+            console.error('Error searching chats:', error);
+        }
+    }
+
+    // Populate chat list
+    function populateChats(chats) {
+        chatList.innerHTML = '';
+        chats.forEach(chat => {
+            const chatItem = document.createElement('div');
+            chatItem.classList.add('chat-item');
+            chatItem.textContent = chat.name || chat.username;
+            chatItem.addEventListener('click', () => openChat(chat));
+            chatList.appendChild(chatItem);
+        });
+    }
+
+    // Open chat
+    async function openChat(chat) {
+        currentChatId = chat.id;
+        chatName.textContent = chat.name;
+        messages.innerHTML = '';
+
+        // Join group or open personal chat
+        if (chat.type === 'group') {
+            ws.send(JSON.stringify({
+                action: 'join_group',
+                related_id: chat.id
+            }));
+        } else if (chat.type !== 'personal') {
+            const response = await fetch(`http://localhost/api/chat/personal/${chat.id}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            const data = await response.json();
+            chat
+        }
+
+    }
+
+    // Send message
+    function sendMessage() {
+        const text = messageText.value.trim();
+        if (text && currentChatId) {
+            ws.send(JSON.stringify({
+                action: 'send_message',
+                message: {
+                    chat_id: currentChatId,
+                    text: text
+                }
+            }));
+            messageText.value = '';
+        }
+    }
+
+    // Display message
+    function displayMessage(message) {
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('message');
+        messageElement.classList.add(message.sender_id === 1 ? 'sent' : 'received'); // Assuming user ID 1 is the current user
+        messageElement.textContent = message.text;
+        messageElement.dataset.id = message.id;
+
+        const actionsElement = document.createElement('div');
+        actionsElement.classList.add('message-actions');
+
+        const editButton = document.createElement('button');
+        editButton.textContent = 'Edit';
+        editButton.classList.add('action-button');
+        editButton.addEventListener('click', () => editMessage(message.id));
+
+        const deleteButton = document.createElement('button');
+        deleteButton.textContent = 'Delete';
+        deleteButton.classList.add('action-button');
+        deleteButton.addEventListener('click', () => deleteMessage(message.id));
+
+        actionsElement.appendChild(editButton);
+        actionsElement.appendChild(deleteButton);
+        messageElement.appendChild(actionsElement);
+
+        messages.appendChild(messageElement);
+        messageElement.scrollIntoView({behavior: 'smooth'});
+    }
+
+    // Edit message
+    function editMessage(messageId) {
+        const messageElement = document.querySelector(`.message[data-id="${messageId}"]`);
+        const currentText = messageElement.textContent;
+        const newText = prompt('Edit message:', currentText);
+
+        if (newText && newText !== currentText) {
+            ws.send(JSON.stringify({
+                action: 'edit_message',
+                message: {
+                    id: messageId,
+                    chat_id: currentChatId,
+                    text: newText
+                }
+            }));
+        }
+    }
+
+    // Delete message
+    function deleteMessage(messageId) {
+        if (confirm('Are you sure you want to delete this message?')) {
+            ws.send(JSON.stringify({
+                action: 'delete_message',
+                related_id: messageId
+            }));
+        }
+    }
+
+    // Event listeners
+    sendButton.addEventListener('click', sendMessage);
+    messageText.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') sendMessage();
+    });
+    search.addEventListener('input', (e) => searchChats(e.target.value));
+
+    // Initialize
+    if (token) {
+        connectWebSocket();
+        searchChats(''); // Initial search to populate the chat list
+    }
+</script>
+</body>
+</html>

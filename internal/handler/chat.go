@@ -3,6 +3,7 @@ package handler
 import (
 	"github.com/gin-gonic/gin"
 	"strconv"
+	"tiny-tg/internal/dtos"
 )
 
 func (h *Handler) GetChat(c *gin.Context) {
@@ -30,4 +31,17 @@ func (h *Handler) GetPersonalChat(c *gin.Context) {
 	res, err := h.service.Chats.MustGetPersonalChat([2]int{info.Id, userId})
 
 	finish(c, res, err)
+}
+
+func (h *Handler) SearchChat(c *gin.Context) {
+	opt := new(dtos.ListOpts)
+	err := c.BindQuery(opt)
+	if hasErr(c, err) {
+		return
+	}
+
+	res, err := h.service.Chats.SearchChat(opt)
+
+	finish(c, res, err)
+
 }

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"gorm.io/gorm"
+	"tiny-tg/internal/dtos"
 	"tiny-tg/internal/models"
 	"tiny-tg/internal/models/types"
 )
@@ -121,4 +122,17 @@ func (r *Chats) DeleteMember(id int, memberId int) error {
 	}
 
 	return nil
+}
+
+func (r *Chats) SearchGroup(data *dtos.ListOpts) ([]models.Chat, error) {
+	var ms []models.Chat
+	query := r.DB
+
+	err := query.Limit(data.Limit).Offset(data.Offset).Find(&ms).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return ms, nil
 }

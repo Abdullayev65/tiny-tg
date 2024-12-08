@@ -10,7 +10,7 @@ type Chat struct {
 	Name      string     `json:"name"`
 	Type      types.Chat `json:"type"`
 	OwnerId   int        `json:"owner_id"`
-	MemberIds []int      `json:"member_ids" gorm:"-"`
+	MemberIds []int      `json:"member_ids,omitempty" gorm:"-"`
 	Info      string     `json:"info,omitempty"`
 	CreatedAt time.Time  `json:"created_at"`
 }

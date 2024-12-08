@@ -13,6 +13,10 @@ const (
 func (h *Handler) UserIdentity(c *gin.Context) {
 	header := c.GetHeader(AuthorizationHeader)
 	if header == "" {
+		header = c.Query("token")
+	}
+
+	if header == "" {
 		failErr(c, app_errors.AuthMwMissingToken)
 		c.Abort()
 		return

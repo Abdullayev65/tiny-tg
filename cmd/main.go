@@ -22,6 +22,12 @@ import (
 // join, leve group
 // create, update, delete message
 // get message_seen
+// DONE
+
+// Next TODO
+// last_active_at
+// updates_from: time (action in ws)
+// attachments in front section
 
 func main() {
 
@@ -76,6 +82,7 @@ func main() {
 		{
 			chat.GET("/:chat_id", handlers.GetChat)
 			chat.GET("/personal/:user_id", handlers.GetPersonalChat)
+			chat.GET("/search", handlers.SearchChat)
 		}
 
 	}

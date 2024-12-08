@@ -2,6 +2,7 @@ package repository
 
 import (
 	"gorm.io/gorm"
+	"tiny-tg/internal/dtos"
 	"tiny-tg/internal/models"
 )
 
@@ -63,4 +64,17 @@ func (r *Users) GetByUsername(username string) (*models.User, error) {
 	}
 
 	return &m, nil
+}
+
+func (r *Users) Search(data *dtos.ListOpts) ([]models.User, error) {
+	var ms []models.User
+	query := r.DB
+
+	err := query.Limit(data.Limit).Offset(data.Offset).Find(&ms).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return ms, nil
 }

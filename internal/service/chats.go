@@ -3,6 +3,7 @@ package service
 import (
 	"slices"
 	"time"
+	"tiny-tg/internal/dtos"
 	"tiny-tg/internal/models"
 	"tiny-tg/internal/models/types"
 	"tiny-tg/internal/pkg/app_errors"
@@ -136,6 +137,27 @@ func (s *Chats) LiveGroup(gropId, userId int) (bool, error) {
 
 func (s *Chats) FindMemberIds(chatId int) ([]int, error) {
 	return s.Repo.Chats.FindMemberIds(chatId)
+}
+
+func (s *Chats) SearchChat(data *dtos.ListOpts) (*dtos.ChatColl, error) {
+	res := new(dtos.ChatColl)
+	var err error
+
+	res.Groups, err = s.Repo.Chats.SearchGroup(data)
+	if err != nil {
+		return nil, err
+	}
+
+	res.Users, err = s.Repo.Users.Search(data)
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range res.Users {
+		res.Users[i].Password = ""
+	}
+
+	return res, nil
 }
 
 //
